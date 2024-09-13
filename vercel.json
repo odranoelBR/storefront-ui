@@ -5,7 +5,7 @@
       "has": [
         {
           "type": "host",
-          "value": "example.com"
+          "value": "https://storefront-ui-eta.vercel.app/"
         }
       ],
       "headers" : [
