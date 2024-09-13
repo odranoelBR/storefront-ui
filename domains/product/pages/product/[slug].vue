@@ -1,23 +1,6 @@
 <script setup lang="ts">
-import {
-  SfButton,
-  SfChip,
-  SfCounter,
-  SfIconCompareArrows,
-  SfIconFavorite,
-  SfIconFavoriteFilled,
-  SfIconPackage,
-  SfIconSafetyCheck,
-  SfIconSell,
-  SfIconShoppingCart,
-  SfIconShoppingCartCheckout,
-  SfIconWarehouse,
-  SfLink,
-  SfRating,
-  SfThumbnail,
-} from '@storefront-ui/vue';
-import type { LocationQueryRaw } from 'vue-router';
-import type { OrderLine, Product } from '~/graphql';
+import type { LocationQueryRaw } from "vue-router";
+import type { OrderLine, Product } from "~/graphql";
 
 const route = useRoute();
 const router = useRouter();
@@ -59,6 +42,10 @@ const selectedColor = computed(
 const selectedMaterial = computed(
   () => Number(route.query.Material) || Number(getAllMaterials?.value[0].value)
 );
+
+const size = ref(selectedSize.value);
+const material = ref(selectedMaterial.value);
+
 const productDetailsOpen = ref(true);
 const quantitySelectorValue = ref(1);
 
@@ -105,351 +92,619 @@ const handleWishlistRemoveItem = async (firstVariant: Product) => {
   await wishlistRemoveItem(firstVariant.id);
 };
 
-onMounted(async () => {
-  await loadProductTemplate({ slug: route.path });
-  await loadProductVariant(params.value);
-  useHead(productHead(productVariant.value, String(route.fullPath)));
-});
-
-addProductToRecentViews(productTemplate.value?.id);
+await loadProductTemplate({ slug: route.path });
+await loadProductVariant(params.value);
 </script>
 
 <template>
-  <NuxtErrorBoundary>
-    <div v-if="productTemplate?.id && !loadingProductTemplate">
-      <UiBreadcrumb
-        :breadcrumbs="breadcrumbs"
-        class="self-start mt-5 mb-10 cursor-pointer"
-      />
-      <div
-        class="md:grid grid-areas-product-page grid-cols-product-page gap-x-6"
-      >
-        <section class="grid-in-left-top md:h-full xl:max-h-[700px]">
-          <LazyUiGallery :images="getImages" />
-        </section>
-        <section class="col-span-5 grid-in-right md:mb-0">
-          <div
-            class="p-6 xl:p-6 md:border md:border-neutral-100 md:shadow-lg md:rounded-md md:sticky md:top-20"
-            data-testid="purchase-card"
-          >
-            <div
-              class="inline-flex items-center justify-center font-medium rounded-none bg-secondary-800 text-sm p-1.5 gap-1 mb-4"
-            >
-              <SfIconSell color="white" size="sm" class="mr-1" />
-              <span class="mr-1 text-white">{{ $t(`sale`) }}</span>
-            </div>
-            <h1
-              class="mb-1 font-bold typography-headline-4"
-              data-testid="product-name"
-            >
-              {{ productVariant?.name }}
-            </h1>
-            <div
-              v-if="
-                productVariant &&
-                productVariant?.combinationInfoVariant?.has_discounted_price
-              "
-              class="my-1"
-            >
-              <span
-                class="mr-2 text-secondary-700 font-bold font-headings text-2xl"
-                data-testid="price"
-              >
-                {{ $currency(getSpecialPrice) }}
-              </span>
-              <span class="text-base font-normal text-neutral-500 line-through">
-                {{ $currency(getRegularPrice) }}
-              </span>
-            </div>
-            <div v-else class="my-1">
-              <span
-                class="mr-2 text-secondary-700 font-bold font-headings text-2xl"
-                data-testid="price"
-              >
-                {{ $currency(getRegularPrice) }}
-              </span>
-            </div>
-            <div class="inline-flex items-center mt-4 mb-2">
-              <SfRating size="xs" :value="4" :max="5" />
-              <SfCounter class="ml-1" size="xs">26</SfCounter>
-              <SfLink
-                href="#"
-                variant="secondary"
-                class="ml-2 text-xs text-neutral-500"
-              >
-                26 reviews
-              </SfLink>
-            </div>
-            <p
-              class="mb-4 font-normal typography-text-sm"
-              data-testid="product-description"
-            >
-              {{ productVariant?.description }}
-            </p>
-            <div class="py-4 mb-4 border-gray-200 border-y">
-              <div
-                v-show="productsInCart"
-                class="w-full mb-4 bg-primary-200 p-2 rounded-md text-center text-primary-700"
-              >
-                <SfIconShoppingCartCheckout />
-                {{ productsInCart }} products in cart
-              </div>
-              <div class="flex flex-col md:flex-row flex-wrap gap-4">
-                <UiQuantitySelector
-                  v-model="quantitySelectorValue"
-                  :value="quantitySelectorValue"
-                  class="min-w-[145px] flex-grow flex-shrink-0 basis-0"
-                />
-                <SfButton
-                  :disabled="loadingProductVariant"
-                  type="button"
-                  size="lg"
-                  class="flex-grow-[2] flex-shrink basis-auto whitespace-nowrap"
-                  @click="handleCartAdd"
-                >
-                  <template #prefix>
-                    <SfIconShoppingCart size="sm" />
-                  </template>
-                  {{ $t('addToCart') }}
-                </SfButton>
-              </div>
-              <div class="flex justify-center mt-4 gap-x-4">
-                <SfButton type="button" size="sm" variant="tertiary">
-                  <template #prefix>
-                    <SfIconCompareArrows size="sm" />
-                  </template>
-                  {{ $t('compare') }}
-                </SfButton>
-                <SfButton
-                  type="button"
-                  size="sm"
-                  variant="tertiary"
-                  :class="
-                    productVariant?.isInWishlist ? 'bg-primary-100' : 'bg-white'
-                  "
-                  @click="
-                    isInWishlist(productVariant?.id as number)
-                      ? handleWishlistRemoveItem(productVariant)
-                      : handleWishlistAddItem(productVariant)
-                  "
-                >
-                  <SfIconFavoriteFilled
-                    v-show="isInWishlist(productVariant?.id as number)"
-                    size="sm"
-                  />
-                  <SfIconFavorite
-                    v-show="!isInWishlist(productVariant?.id as number)"
-                    size="sm"
-                  />
-                  {{
-                    isInWishlist(productVariant?.id as number)
-                      ? $t('wishlist.removeFromWishlist')
-                      : $t('wishlist.addToWishlist')
-                  }}
-                </SfButton>
-              </div>
-            </div>
-            <div class="flex first:mt-4">
-              <SfIconPackage
-                size="sm"
-                class="flex-shrink-0 mr-1 text-neutral-500"
-              />
-              <p class="text-sm">
-                <i18n-t keypath="additionalInfo.shipping" scope="global">
-                  <template #date>
-                    {{ tomorrow }}
-                  </template>
-                  <template #addAddress>
-                    <SfLink class="ml-1" href="#" variant="secondary">{{
-                      $t('additionalInfo.addAddress')
-                    }}</SfLink>
-                  </template>
-                </i18n-t>
-              </p>
-            </div>
-            <div class="flex mt-4">
-              <SfIconWarehouse
-                size="sm"
-                class="flex-shrink-0 mr-1 text-neutral-500"
-              />
-              <p class="text-sm">
-                <i18n-t keypath="additionalInfo.pickup" scope="global">
-                  <template #checkAvailability>
-                    <SfLink class="ml-1" href="#" variant="secondary">{{
-                      $t('additionalInfo.checkAvailability')
-                    }}</SfLink>
-                  </template>
-                </i18n-t>
-              </p>
-            </div>
-            <div class="flex mt-4">
-              <SfIconSafetyCheck
-                size="sm"
-                class="flex-shrink-0 mr-1 text-neutral-500"
-              />
-              <i18n-t keypath="additionalInfo.returns" scope="global">
-                <template #details>
-                  <SfLink class="ml-1" href="#" variant="secondary">{{
-                    $t('additionalInfo.details')
-                  }}</SfLink>
-                </template>
-              </i18n-t>
-            </div>
-          </div>
-        </section>
-        <section class="grid-in-left-bottom md:mt-8">
-          <UiDivider class="mt-10 mb-6" />
-          <div class="lg:px-4" data-testid="product-properties">
-            <fieldset
-              v-if="getAllSizes && getAllSizes?.length"
-              class="pb-4 flex"
-            >
-              <legend
-                class="block mb-2 text-base font-medium leading-6 text-neutral-900"
-              >
-                Size
-              </legend>
-              <span
-                v-for="{ label, value } in getAllSizes"
-                :key="value"
-                class="mr-2 mb-2 uppercase"
-              >
-                <SfChip
-                  class="min-w-[48px]"
-                  size="sm"
-                  :v-model="value"
-                  :input-props="{
-                    onClick: (e) => value == selectedSize && e.preventDefault(),
-                  }"
-                  :model-value="value == selectedSize"
-                  @update:model-value="
-                    value != selectedSize &&
-                      updateFilter({ ['Size']: value.toString() })
-                  "
-                >
-                  {{ label }}
-                </SfChip>
-              </span>
-            </fieldset>
-            <fieldset
-              v-if="getAllMaterials && getAllMaterials?.length"
-              class="pb-4 flex"
-            >
-              <legend
-                class="block mb-2 text-base font-medium leading-6 text-neutral-900"
-              >
-                Material
-              </legend>
-              <span
-                v-for="{ label, value } in getAllMaterials"
-                :key="value"
-                class="mr-2 mb-2 uppercase"
-              >
-                <SfChip
-                  class="min-w-[48px]"
-                  size="sm"
-                  :v-model="value"
-                  :input-props="{
-                    onClick: (e) =>
-                      value == selectedMaterial && e.preventDefault(),
-                  }"
-                  :model-value="value == selectedMaterial"
-                  @update:model-value="
-                    value != selectedMaterial &&
-                      updateFilter({ ['Material']: value.toString() })
-                  "
-                >
-                  {{ label }}
-                </SfChip>
-              </span>
-            </fieldset>
-            <fieldset
-              v-if="getAllColors && getAllColors?.length"
-              class="pb-2 flex"
-            >
-              <legend
-                class="block mb-2 text-base font-medium leading-6 text-neutral-900"
-              >
-                Color
-              </legend>
-              <span
-                v-for="{ label, value } in getAllColors"
-                :key="value"
-                class="mr-2 mb-2 uppercase"
-              >
-                <SfChip
-                  class="min-w-[48px]"
-                  size="sm"
-                  :v-model="value"
-                  :input-props="{
-                    onClick: (e) =>
-                      value == selectedColor && e.preventDefault(),
-                  }"
-                  :model-value="value == selectedColor"
-                  @update:model-value="
-                    value != selectedColor &&
-                      updateFilter({ ['Color']: value.toString() })
-                  "
-                >
-                  <template #prefix>
-                    <SfThumbnail size="sm" :style="{ background: label }" />
-                  </template>
-                  {{ label }}
-                </SfChip>
-              </span>
-            </fieldset>
-          </div>
-          <UiDivider class="my-4 md:mt-6" />
-          <div data-testid="product-accordion">
-            <UiAccordionItem
-              v-model="productDetailsOpen"
-              summary-class="md:rounded-md w-full hover:bg-neutral-100 py-2 lg:pl-4 pr-3 flex justify-between items-center"
-            >
-              <template #summary>
-                <h2
-                  class="font-bold font-headings text-lg leading-6 md:text-2xl"
-                >
-                  {{ $t('productDetails') }}
-                </h2>
-              </template>
-              <p>
-                {{ productVariant?.description }}
-              </p>
-            </UiAccordionItem>
-            <UiDivider class="my-4" />
-            <UiAccordionItem
-              summary-class="md:rounded-md w-full hover:bg-neutral-100 py-2 lg:pl-4 pr-3 flex justify-between items-center"
-            >
-              <template #summary>
-                <h2
-                  class="font-bold font-headings text-lg leading-6 md:text-2xl"
-                >
-                  {{ $t('customerReviews') }}
-                </h2>
-              </template>
-              <p>
-                Lightweight • Non slip • Flexible outsole • Easy to wear on and
-                off
-              </p>
-            </UiAccordionItem>
-          </div>
-        </section>
-        <UiDivider class="mt-4 mb-2" />
+  <div
+    class="text-zinc-800 items-center border-b-neutral-300 border-b-2 text-lg justify-between px-6 flex h-20 border-solid bg-zinc-50 font-bold uppercase lg:pr-20 lg:pl-20 lg:sticky xl:pr-28 xl:pl-28"
+    id="div-1"
+  >
+    <div class="text-xs flex">
+      <div class="cursor-pointer mr-4 md:mr-8">Product summary</div>
+      <div class="text-neutral-300 cursor-pointer mr-4 md:mr-8">
+        Product details
       </div>
-      <section class="lg:mx-4 mt-28 mb-20">
-        <ProductSlider text="Recommended with this product" />
-      </section>
+      <div class="text-neutral-300 cursor-pointer mr-4 md:mr-8">
+        Compare models
+      </div>
+      <div class="text-neutral-300 cursor-pointer">Reviews</div>
     </div>
-    <template #error="{ error }">
-      <div>
-        <NuxtImg
-          src="/images/something-went-wrong.svg"
-          :alt="$t('emptyStateAltText')"
-          width="300"
-          height="300"
-        />
-        <p class="mt-8 font-medium">{{ $t('emptyStateText') }}</p>
+    <div class="flex">
+      <button
+        class="items-start cursor-pointer py-3 px-8 text-center inline-block w-48 h-12 border-2 border-zinc-800 border-solid rounded"
+        id="button-1"
+      >
+        Select size
+      </button>
+    </div>
+  </div>
+
+  <div
+    class="text-zinc-800 flex-wrap text-lg bg-zinc-50 lg:flex lg:justify-between lg:mt-20 lg:mr-0 lg:mb-20 lg:ml-0"
+  >
+    <div class="w-full lg:w-[41.66%] lg:pl-28" id="div-1">
+      <div class="mb-6">
+        <div
+          class="bg-[linear-gradient(78.31deg,_rgb(255,_198,_185),_rgb(255,_244,_148)_21.88%,_rgb(203,_255,_186)_35.07%,_rgb(173,_238,_255)_50.55%,_rgb(182,_206,_255)_70.15%,_rgb(252,_194,_241)_99.03%)] relative w-full p-1"
+        >
+          <div class="bg-white relative">
+            <div class="content-start relative flex w-full overflow-hidden">
+              <div
+                class="cursor-grab relative min-h-full w-[calc(-56px_+_100vw)] h-[calc(-56px_+_100vw)] overflow-hidden lg:w-[calc(-120px_+_41.66vw)] lg:h-[calc(-120px_+_41.66vw)]"
+              >
+                <NuxtImg
+                  provider="odooProvider"
+                  :src="productVariant?.image"
+                  :width="700"
+                  :height="700"
+                >
+                </NuxtImg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex mt-5" id="div-2">
+          <div class="cursor-pointer relative mr-3 md:w-24" id="div-3">
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-1.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-1"
+            />
+          </div>
+          <div
+            class="cursor-pointer opacity-25 relative mr-3 md:w-24"
+            id="div-4"
+          >
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-2.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-2"
+            />
+          </div>
+          <div
+            class="cursor-pointer opacity-25 relative mr-3 md:w-24"
+            id="div-5"
+          >
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-3.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-3"
+            />
+          </div>
+          <div
+            class="cursor-pointer opacity-25 relative mr-3 md:w-24"
+            id="div-6"
+          >
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-4.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-4"
+            />
+          </div>
+          <div
+            class="cursor-pointer opacity-25 relative mr-3 md:w-24"
+            id="div-7"
+          >
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-6.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-5"
+            />
+          </div>
+          <div
+            class="cursor-pointer opacity-25 relative mr-3 md:w-24"
+            id="div-8"
+          >
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F11%2F1%2F28%2Fzipfit_gara_lv-5.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-6"
+            />
+          </div>
+          <div
+            class="cursor-pointer opacity-25 relative mr-3 md:w-24"
+            id="div-9"
+          >
+            <img
+              src="https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=3840&amp;q=25"
+              srcset="
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=16&amp;q=25     16w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=32&amp;q=25     32w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=48&amp;q=25     48w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=64&amp;q=25     64w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=96&amp;q=25     96w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=128&amp;q=25   128w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=256&amp;q=25   256w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=384&amp;q=25   384w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=640&amp;q=25   640w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=750&amp;q=25   750w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=828&amp;q=25   828w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=1080&amp;q=25 1080w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=1200&amp;q=25 1200w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=1920&amp;q=25 1920w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=2048&amp;q=25 2048w,
+                https://www.zipfit.com/_next/image?url=https%3A%2F%2Fmedia.crystallize.com%2Fzipfit%2F23%2F9%2F26%2F1%2F23-24-blister-best-of-badge-1.png&amp;w=3840&amp;q=25 3840w
+              "
+              class="bottom-0 left-0 object-contain absolute top-0 w-12 h-12"
+              id="img-7"
+            />
+          </div>
+        </div>
       </div>
-    </template>
-  </NuxtErrorBoundary>
+    </div>
+
+    <div
+      class="text-zinc-800 text-lg w-full bg-zinc-50 lg:w-2/4 lg:pr-28"
+      id="div-1"
+    >
+      <h1 class="text-[5.00rem] leading-none font-bold" id="h1-1">
+        {{ productVariant.name }}
+      </h1>
+      <div
+        class="bg-[linear-gradient(258.18deg,_rgb(252,_194,_241),_rgb(133,_173,_255)_100%,_rgb(182,_206,_255)_0px)] w-20 h-1.5 my-6"
+        id="div-2"
+      ></div>
+      <div class="justify-start flex gap-10">
+        <div>
+          <div class="text-neutral-500">Designed for</div>
+          <h6 class="text-2xl font-bold mt-3">All-mountain</h6>
+        </div>
+        <div>
+          <div class="text-neutral-500">Feel</div>
+          <h6 class="text-2xl font-bold mt-3">Aggressive</h6>
+        </div>
+        <div>
+          <div class="text-neutral-500">Liner Volume</div>
+          <h6 class="text-2xl font-bold mt-3">Mid</h6>
+        </div>
+      </div>
+      <div
+        class="text-neutral-500 text-2xl my-6 lg:mt-10 lg:mr-0 lg:mb-10 lg:ml-0"
+      >
+        {{ productVariant.description }}
+      </div>
+      <div class="my-6 lg:mt-10 lg:mr-0 lg:mb-10 lg:ml-0">
+        <div class="flex mb-4 text-2xl font-bold">
+          <h6 class="flex mr-3">
+            Not in stock.<span class="cursor-pointer underline"
+              >Notify me when back in stock</span
+            >
+          </h6>
+        </div>
+        <div class="flex gap-3">
+          <select
+            @change="updateFilter({ ['Size']: size.toString() })"
+            v-model="size"
+            style="background-position: calc(100% - 32px) 50%"
+            class="bg-zinc-100 items-center bg-no-repeat cursor-pointer text-2xl pl-6 pr-16 text-ellipsis inline-block w-full h-16 max-w-full border-2 border-neutral-300 border-solid rounded md:w-auto lg:h-16 lg:pt-0 lg:pr-16 lg:pb-0 lg:pl-8"
+          >
+            <option
+              value=""
+              class="text-zinc-500 pb-1 px-1 w-auto h-auto"
+              disabled
+            >
+              Sizes
+            </option>
+            <option
+              :value="value"
+              :key="value"
+              class="pb-1 px-1 w-auto h-auto"
+              v-for="{ label, value } in getAllSizes"
+            >
+              {{ label }}
+            </option>
+          </select>
+          <select
+            @change="updateFilter({ ['Material']: material.toString() })"
+            v-model="material"
+            style="background-position: calc(100% - 32px) 50%"
+            class="bg-zinc-100 items-center bg-no-repeat cursor-pointer text-2xl pl-6 pr-16 text-ellipsis inline-block w-full h-16 max-w-full border-2 border-neutral-300 border-solid rounded md:w-auto lg:h-16 lg:pt-0 lg:pr-16 lg:pb-0 lg:pl-8"
+          >
+            <option
+              value=""
+              class="text-zinc-500 pb-1 px-1 w-auto h-auto"
+              disabled
+            >
+              Material
+            </option>
+            <option
+              :value="value"
+              :key="value"
+              class="pb-1 px-1 w-auto h-auto"
+              v-for="{ label, value } in getAllMaterials"
+            >
+              {{ label }}
+            </option>
+          </select>
+        </div>
+        <div class="text-neutral-500 mt-4">
+          Not sure?
+          <span class="cursor-pointer underline">View sizing information.</span>
+        </div>
+      </div>
+      <div
+        class="text-[2.63rem] leading-none my-6 lg:mt-10 lg:mr-0 lg:mb-10 lg:ml-0"
+      >
+        €&nbsp; {{ productVariant.price }}
+      </div>
+      <div class="flex">
+        <button
+          class="items-start bg-[linear-gradient(258.18deg,_rgb(252,_194,_241),_rgb(133,_173,_255)_100%,_rgb(182,_206,_255)_0px)] font-bold opacity-50 py-3 px-8 text-center uppercase inline-block h-12 rounded"
+          id="button-1"
+        >
+          Add to cart
+        </button>
+        <div class="pt-6 lg:pt-0 lg:pr-0 lg:pb-0 lg:pl-14">
+          <h6 class="text-2xl font-bold">Shipping &amp; Returns</h6>
+          <div class="text-neutral-500 mt-4">
+            <p>
+              Learn about our
+              <a href="https://app.zipfit.com/" class="underline"
+                >Returns and Exchanges Policy.</a
+              >
+              Global + UK customers (outside of EU and NA) are responsible for
+              all duties and taxes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="text-zinc-800 flex-wrap text-lg bg-zinc-50 lg:flex lg:justify-between lg:mt-20 lg:mr-0 lg:mb-20 lg:ml-0"
+  >
+    <div class="w-full lg:w-[41.66%] lg:pl-28" id="div-1">
+      <div>
+        <h3 class="text-[3.63rem] leading-none font-bold">Product details</h3>
+        <div
+          class="bg-[linear-gradient(258.18deg,_rgb(252,_194,_241),_rgb(133,_173,_255)_100%,_rgb(182,_206,_255)_0px)] w-20 h-1.5 my-4"
+        ></div>
+        <div class="text-neutral-500 text-2xl mt-8 mb-10">
+          The interior is stitched with comfortable neoprene that offers just
+          the right amount of padding and is easy to slide on or slip off. Gara
+          LV ski boot liners properly position your foot so that your toes have
+          wiggle room and stay warm thanks to a neoprene toe box insulated with
+          Thinsulate and merino wool. A moderately stiff cuff makes the Gara our
+          most versatile liner, capable of performing in any terrain on the
+          mountain.
+        </div>
+        <div class="bg-white mb-5 p-8 md:p-10">
+          <h5 class="text-4xl font-bold">Fit considerations</h5>
+          <div
+            class="bg-[linear-gradient(258.18deg,_rgb(252,_194,_241),_rgb(133,_173,_255)_100%,_rgb(182,_206,_255)_0px)] w-20 h-1.5 my-4"
+          ></div>
+          <p>
+            The Gara LV liner is pre-packed with a moderate amount of
+            OneMinuteFit self-molding cork composite, specifically designed for
+            low to mid volume performance boots. While the Gara LV comes
+            pre-packed with less cork, skiers can
+            <a
+              href="https://www.zipfit.com/resources/adding-omfit-cork"
+              class="underline"
+              >add more cork</a
+            >
+            to the tongue or ankle pockets to dial in their perfect fit. If the
+            Gara LV doesn’t have enough volume for your ski boot shells,
+            consider the Gara HV model.
+          </p>
+        </div>
+        <div class="bg-white p-8 md:p-10">
+          <h5 class="text-4xl font-bold">Intended use</h5>
+          <div
+            class="bg-[linear-gradient(258.18deg,_rgb(252,_194,_241),_rgb(133,_173,_255)_100%,_rgb(182,_206,_255)_0px)] w-20 h-1.5 my-4"
+          ></div>
+          All mountain, freeride, carving
+        </div>
+      </div>
+    </div>
+    <div class="w-full lg:w-2/4 lg:pr-28">
+      <div id="div-2">
+        <h3 class="text-[3.63rem] leading-none font-bold">Tech features</h3>
+        <div
+          class="bg-[linear-gradient(258.18deg,_rgb(252,_194,_241),_rgb(133,_173,_255)_100%,_rgb(182,_206,_255)_0px)] w-20 h-1.5 my-4"
+        ></div>
+      </div>
+      <div
+        class="grid-rows-[403.172px_377.578px_316.781px] mt-8 gap-5 lg:grid lg:grid-cols-[repeat(2,_1fr)]"
+      >
+        <div class="bg-white h-full p-6 lg:p-8">
+          <h5 class="text-4xl font-bold mb-4">Laces and power strap</h5>
+          Designed to keep your heel and midfoot in place, the lacing system and
+          power strap align your foot within the liner.
+        </div>
+        <div class="bg-white h-full p-6 lg:p-8">
+          <h5 class="text-4xl font-bold mb-4">Neoprene toe box</h5>
+          A flexible toe box conforms to your forefoot, regardless of the width.
+          With your foot secure in place, this toe box design allows for toe
+          movement, keeping your feet warm.
+        </div>
+        <div class="bg-white h-full p-6 lg:p-8">
+          <h5 class="text-4xl font-bold mb-4">Merino wool and Thinsulate</h5>
+          ZipFit toe boxes are insulated with Thinsulate and real merino wool,
+          keeping your toes warmer while still promoting breathability.
+        </div>
+        <div class="bg-white h-full p-6 lg:p-8">
+          <h5 class="text-4xl font-bold mb-4">Adjustable cork pouches</h5>
+          Three cork pouches in each liner (located behind the top of the tongue
+          and on either side of the instep) allow you to adjust the cork fill to
+          dial in your perfect fit.
+        </div>
+        <div class="bg-white h-full p-6 lg:p-8">
+          <h5 class="text-4xl font-bold mb-4">Neoprene lining</h5>
+          3mm neoprene lines the interior of this ZipFit, adding a nice element
+          of cushioning without sacrificing the performance of your fit.
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+<style>
+@media (max-width: 1023px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #div-1 {
+    display: none !important;
+  }
+}
+@media (max-width: 767px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #button-1 {
+    padding-top: 10px !important;
+    padding-right: 18px !important;
+    padding-bottom: 10px !important;
+    padding-left: 18px !important;
+  }
+}
+@media (max-width: 1023px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #div-1 {
+    padding-top: 0px !important;
+    padding-right: 24px !important;
+    padding-bottom: 0px !important;
+    padding-left: 24px !important;
+  }
+  #h1-1 {
+    display: none !important;
+  }
+  #div-2 {
+    display: none !important;
+  }
+}
+@media (max-width: 767px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #button-1 {
+    width: 100% !important;
+  }
+}
+@media (max-width: 1023px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #div-1 {
+    padding-top: 0px !important;
+    padding-right: 24px !important;
+    padding-bottom: 0px !important;
+    padding-left: 24px !important;
+  }
+  #div-10 {
+    padding-top: 0px !important;
+    padding-right: 24px !important;
+    padding-bottom: 0px !important;
+    padding-left: 24px !important;
+  }
+  #h1-1 {
+    display: none !important;
+  }
+  #div-11 {
+    display: none !important;
+  }
+}
+@media (max-width: 767px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #div-2 {
+    justify-content: center !important;
+  }
+  #div-3 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-1 {
+    display: none !important;
+  }
+  #div-4 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-2 {
+    display: none !important;
+  }
+  #div-5 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-3 {
+    display: none !important;
+  }
+  #div-6 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-4 {
+    display: none !important;
+  }
+  #div-7 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-5 {
+    display: none !important;
+  }
+  #div-8 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-6 {
+    display: none !important;
+  }
+  #div-9 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  #img-7 {
+    display: none !important;
+  }
+  #svg-1 {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #svg-2 {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #svg-3 {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #svg-4 {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #svg-5 {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  #button-1 {
+    width: 100% !important;
+  }
+}
+@media (max-width: 1023px) {
+  /* DivMagic Note: Tailwind does not support max-width. We will fix this soon. */
+
+  #div-1 {
+    padding-top: 0px !important;
+    padding-right: 24px !important;
+    padding-bottom: 0px !important;
+    padding-left: 24px !important;
+  }
+  #div-2 {
+    padding-top: 0px !important;
+    padding-right: 24px !important;
+    padding-bottom: 0px !important;
+    padding-left: 24px !important;
+  }
+}
+</style>
