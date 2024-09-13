@@ -34,13 +34,13 @@ const params = computed(() => ({
 }));
 
 const selectedSize = computed(
-  () => Number(route.query.Size) || Number(getAllSizes?.value[0].value)
+  () => Number(route.query.Size) || Number(getAllSizes?.value[0]?.value)
 );
 const selectedColor = computed(
-  () => Number(route.query.Color) || Number(getAllColors?.value[0].value)
+  () => Number(route.query.Color) || Number(getAllColors?.value[0]?.value)
 );
 const selectedMaterial = computed(
-  () => Number(route.query.Material) || Number(getAllMaterials?.value[0].value)
+  () => Number(route.query.Material) || Number(getAllMaterials?.value[0]?.value)
 );
 
 const size = ref(selectedSize.value);
