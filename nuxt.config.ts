@@ -112,18 +112,6 @@ export default defineNuxtConfig({
   },
   nitro: {
     compressPublicAssets: true,
-    storage: {
-      cache: {
-        driver: process.env.NUXT_STORAGE_DRIVER,
-        url: process.env.NUXT_STORAGE_URL,
-      },
-    },
-    devStorage: {
-      cache: {
-        driver: process.env.NUXT_STORAGE_DRIVER,
-        url: process.env.NUXT_STORAGE_URL,
-      },
-    },
   },
   site: {
     url: "https://vsfsdk.labs.odoogap.com/",
