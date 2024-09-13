@@ -57,11 +57,7 @@ export default defineNuxtConfig({
       currencyPrecision: "",
     },
   },
-  googleFonts: {
-    families: {
-      "Red Hat Display": [400, 500, 700],
-    },
-  },
+
   i18n: {
     locales: [
       {
@@ -112,18 +108,7 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
-    "/": { swr: Number(process.env?.NUXT_SWR_CACHE_TIME) },
-    "/category/*": { swr: Number(process.env?.NUXT_SWR_CACHE_TIME) },
-    "/product/*": { swr: Number(process.env?.NUXT_SWR_CACHE_TIME) },
-    "/_ipx/**": {
-      headers: { "cache-control": "public, max-age=31536000, immutable" },
-    },
-    "/icons/**": {
-      headers: { "cache-control": "public, max-age=31536000, immutable" },
-    },
-    "/favicon.ico": {
-      headers: { "cache-control": "public, max-age=31536000, immutable" },
-    },
+    "/": { prerender: true },
   },
   nitro: {
     compressPublicAssets: true,
