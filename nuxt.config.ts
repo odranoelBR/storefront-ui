@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       viewport: "minimum-scale=1, initial-scale=1, width=device-width",
-      title: "Vue Storefront",
+      title: "Zipfit ERPGAP POC",
       htmlAttrs: {
         lang: "en",
       },
@@ -79,16 +79,7 @@ export default defineNuxtConfig({
     },
   },
   build: {
-    transpile: [
-      "tslib",
-      "@apollo/client",
-      "@apollo/client/core",
-      "@vue/apollo-composable",
-      "@vue/apollo-option",
-      "ts-invariant",
-      "vue-toastification",
-      "@erpgap/odoo-sdk-api-client",
-    ],
+    transpile: ["@apollo/client", "@erpgap/odoo-sdk-api-client", "tslib"],
   },
   image: {
     providers: {
@@ -121,9 +112,6 @@ export default defineNuxtConfig({
   },
   tailwindcss: {
     viewer: false,
-  },
-  device: {
-    refreshOnResize: true,
   },
   experimental: {
     asyncContext: false,
