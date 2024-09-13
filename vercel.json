@@ -1,13 +1,7 @@
 {
   "headers": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "https://storefront-ui-eta.vercel.app/"
-        }
-      ],
+      "source": "/(.*)",
       "headers" : [
         {
           "key" : "X-Robots-Tag",
