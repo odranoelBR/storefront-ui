@@ -79,7 +79,16 @@ export default defineNuxtConfig({
     },
   },
   build: {
-    transpile: ["@apollo/client", "@erpgap/odoo-sdk-api-client", "tslib"],
+    transpile: [
+      "tslib",
+      "@apollo/client",
+      "@apollo/client/core",
+      "@vue/apollo-composable",
+      "@vue/apollo-option",
+      "ts-invariant",
+      "vue-toastification",
+      "@erpgap/odoo-sdk-api-client",
+    ],
   },
   image: {
     providers: {
